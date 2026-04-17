@@ -1,3 +1,12 @@
+---
+title: arXiv Word Cloud
+emoji: ☁
+colorFrom: red
+colorTo: orange
+sdk: docker
+pinned: false
+---
+
 # arXiv Word Cloud
 
 A web app that searches arXiv papers by topic, date range, and category, then visualizes research trends as a word cloud — using both raw word frequencies and extracted keyphrases.
