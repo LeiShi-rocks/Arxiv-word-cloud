@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>arXiv Word Cloud</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="#b31b1b"/>
+          <text x="6" y="23" font-size="18" font-weight="bold" fill="white" font-family="serif">ar</text>
+        </svg>
+        <span>arXiv <strong>Word Cloud</strong></span>
+      </div>
+      <p class="tagline">Visualize research trends from arXiv papers</p>
+    </div>
+  </header>
+
+  <main>
+    <aside class="sidebar">
+      <form id="search-form" novalidate>
+
+        <section class="form-section">
+          <label class="form-label" for="query">Search Topic</label>
+          <input
+            type="text"
+            id="query"
+            name="query"
+            class="form-input"
+            placeholder="e.g. diffusion models, graph neural networks…"
+            autocomplete="off"
+          />
+          <span class="form-hint">Searches titles and abstracts</span>
+        </section>
+
+        <section class="form-section">
+          <label class="form-label">Date Range</label>
+          <div class="date-row">
+            <div class="date-field">
+              <label class="sub-label" for="start-date">From</label>
+              <input type="date" id="start-date" name="start_date" class="form-input" />
+            </div>
+            <div class="date-field">
+              <label class="sub-label" for="end-date">To</label>
+              <input type="date" id="end-date" name="end_date" class="form-input" />
+            </div>
+          </div>
+          <span class="form-hint" id="trending-date-hint" hidden>
+            Trending compares your date range against the equally-long window before it.
+          </span>
+        </section>
+
+        <section class="form-section">
+          <label class="form-label">arXiv Categories</label>
+          <div id="categories-container" class="categories-container">
+            <div class="category-loading">Loading categories…</div>
+          </div>
+          <button type="button" id="clear-cats" class="link-btn">Clear all</button>
+        </section>
+
+        <section class="form-section">
+          <div class="slider-header">
+            <label class="form-label" for="max-results">Max Papers</label>
+            <span id="max-results-display" class="slider-value">200</span>
+          </div>
+          <input
+            type="range"
+            id="max-results"
+            name="max_results"
+            class="form-range"
+            min="10"
+            max="500"
+            step="10"
+            value="200"
+          />
+          <div class="range-labels"><span>10</span><span>500</span></div>
+        </section>
+
+        <section class="form-section">
+          <label class="form-label">Word Cloud Mode</label>
+          <div class="mode-tabs" role="group" aria-label="Word cloud mode">
+            <button type="button" class="mode-tab active" data-mode="both">Both</button>
+            <button type="button" class="mode-tab" data-mode="words">N-grams</button>
+            <button type="button" class="mode-tab" data-mode="phrases">Keyphrases</button>
+            <button type="button" class="mode-tab mode-tab--trending" data-mode="trending">Trending ↑</button>
+          </div>
+          <input type="hidden" id="mode" value="both" />
+        </section>
+
+        <button type="submit" class="btn-primary" id="submit-btn">
+          <span class="btn-text">Generate Word Cloud</span>
+          <span class="btn-spinner" hidden>
+            <svg class="spinner-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+            </svg>
+          </span>
+        </button>
+
+        <div id="form-error" class="error-banner" hidden></div>
+      </form>
+    </aside>
+
+    <section class="results" id="results">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">☁</div>
+        <h2>Your word cloud will appear here</h2>
+        <p>Fill in a topic and click <strong>Generate Word Cloud</strong> to explore arXiv research trends.</p>
+        <p class="empty-hint">Try <strong>Trending ↑</strong> mode to discover what's newly emerging vs. what's already established.</p>
+      </div>
+
+      <!-- Word Cloud Output -->
+      <div id="output" hidden>
+        <div class="output-meta" id="output-meta"></div>
+
+        <!-- Standard clouds -->
+        <div id="wc-words-section" class="wc-section">
+          <h3 class="wc-title">N-gram Frequencies <span class="wc-subtitle">unigrams · bigrams · trigrams — query words removed</span></h3>
+          <div class="wc-image-wrap">
+            <img id="wc-words-img" class="wc-image" alt="N-gram word cloud" />
+          </div>
+        </div>
+
+        <div id="wc-phrases-section" class="wc-section">
+          <h3 class="wc-title">YAKE Keyphrases <span class="wc-subtitle">multi-word only — query words removed</span></h3>
+          <div class="wc-image-wrap">
+            <img id="wc-phrases-img" class="wc-image" alt="Keyphrase word cloud" />
+          </div>
+        </div>
+
+        <!-- Trending cloud -->
+        <div id="wc-trending-section" class="wc-section wc-section--trending">
+          <div class="trending-header">
+            <div>
+              <h3 class="wc-title wc-title--trending">Trending Topics ↑ <span class="wc-subtitle">enriched in recent window vs. baseline — size = how much it rose</span></h3>
+              <div class="trending-windows" id="trending-windows"></div>
+            </div>
+          </div>
+          <div class="wc-image-wrap">
+            <img id="wc-trending-img" class="wc-image" alt="Trending topics word cloud" />
+          </div>
+          <div id="trending-table-wrap" class="trending-table-wrap"></div>
+        </div>
+
+        <details class="paper-list-details" id="paper-list-details">
+          <summary class="paper-list-summary">
+            <span id="paper-count-label">Papers</span>
+            <svg class="chevron" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"/>
+            </svg>
+          </summary>
+          <div id="paper-list" class="paper-list"></div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

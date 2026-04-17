@@ -1,0 +1,9 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+arxiv>=2.1.0
+wordcloud>=1.9.3
+nltk>=3.8.1
+yake>=0.4.8
+Pillow>=10.3.0
+matplotlib>=3.8.0
+python-multipart>=0.0.9
