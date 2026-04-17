@@ -96,6 +96,7 @@ main {
 }
 .form-input {
   width: 100%;
+  min-width: 0;
   padding: 9px 12px;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -104,6 +105,12 @@ main {
   color: var(--text);
   outline: none;
   transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+/* Date inputs need tighter padding so MM/DD/YYYY fits in half the sidebar */
+input[type="date"].form-input {
+  padding: 9px 6px;
+  font-size: 0.82rem;
 }
 .form-input:focus {
   border-color: var(--blue-accent);
@@ -117,8 +124,8 @@ main {
 }
 
 /* Date row */
-.date-row { display: flex; gap: 8px; }
-.date-field { flex: 1; }
+.date-row { display: flex; gap: 8px; width: 100%; min-width: 0; }
+.date-field { flex: 1; min-width: 0; overflow: hidden; }
 .sub-label {
   font-size: 0.72rem;
   color: var(--text-muted);
